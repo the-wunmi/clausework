@@ -1,0 +1,20 @@
+# Only source goes into the build context: no secrets, no local builds or installs.
+.env
+.env.*
+!.env.example
+.git
+.github
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/coverage
+**/*.log
+**/*.tsbuildinfo
+.uploads
+packages/agents/eval/reports
+docs
+*.md
+Dockerfile
+.dockerignore
+docker-compose.yml

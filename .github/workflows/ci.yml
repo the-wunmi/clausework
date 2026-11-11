@@ -1,0 +1,54 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only token: CI only checks out and verifies.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      # A throwaway database that lives only for this job, with a per-run password, so there is no
+      # fixed credential in the repository.
+      DATABASE_URL: postgres://clausework:ci-${{ github.run_id }}-${{ github.run_attempt }}@localhost:5434/clausework
+      DBOS_SYSTEM_DATABASE_URL: postgres://clausework:ci-${{ github.run_id }}-${{ github.run_attempt }}@localhost:5434/clausework_dbos
+      # Tests use the PayPal simulator and scripted agents; no PayPal or model keys are given.
+      TURBO_TELEMETRY_DISABLED: 1
+      NEXT_TELEMETRY_DISABLED: 1
+    services:
+      postgres:
+        image: postgres:17.11-alpine@sha256:e5d2edd28b1f8d40a0a6c0c9cdc545b19b56a0d5d88f94bc11a97d970d4700d0
+        env:
+          POSTGRES_USER: clausework
+          POSTGRES_PASSWORD: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          POSTGRES_DB: clausework
+        ports: ["5434:5432"]
+        options: >-
+          --health-cmd "pg_isready -U clausework"
+          --health-interval 5s
+          --health-retries 20
+    steps:
+      # Actions are pinned to commit SHAs (tag in the comment); Dependabot keeps them current.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --prod --audit-level high
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm --filter @clausework/web build

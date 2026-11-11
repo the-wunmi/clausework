@@ -1,0 +1,38 @@
+{
+  "name": "clausework",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose down",
+    "db:generate": "pnpm --filter @clausework/db generate",
+    "db:migrate": "pnpm --filter @clausework/db migrate",
+    "dev": "turbo run dev --parallel",
+    "dev:api": "pnpm --filter @clausework/api dev",
+    "dev:web": "pnpm --filter @clausework/web dev",
+    "samples": "tsx samples/build-pdfs.ts",
+    "eval": "tsx --env-file=.env packages/agents/eval/run.ts",
+    "seed:demo": "pnpm --filter @clausework/api exec tsx scripts/seed.ts",
+    "owner-key:reset": "pnpm --filter @clausework/api owner-key:reset",
+    "webhook:register": "pnpm --filter @clausework/api webhook:register",
+    "test:live": "CLAUSEWORK_LIVE=1 pnpm --filter @clausework/paypal exec vitest run test/sandbox.live.test.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.3",
+    "@types/node": "^24",
+    "pdf-lib": "^1.17.1",
+    "tsx": "^4.23.15",
+    "turbo": "^2.11.10",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

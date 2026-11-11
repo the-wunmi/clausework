@@ -1,0 +1,17 @@
+{
+  "name": "@clausework/billing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@clausework/core": "workspace:*",
+    "zod": "^4.6.7"
+  }
+}

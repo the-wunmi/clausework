@@ -1,0 +1,38 @@
+ORDER FORM No. LDG-2025-0417
+
+Ledgerly Cloud Platform
+
+Customer: Acme Logistics Co., 1200 Harbor Way, Oakland, CA 94607 ("Customer"), billing contact finance@acmelogistics.co
+Provider: Ledgerly Inc., 500 Howard Street, San Francisco, CA 94105 ("Ledgerly"), billing contact ar@ledgerly.io
+Reseller: Northstar Partners LLC ("Northstar"), payouts contact payouts@northstarpartners.co
+
+This Order Form is governed by Ledgerly's Master Subscription Agreement. It takes effect on 1 October 2025 (the "Order Start Date").
+
+1. SUBSCRIPTION TERM
+
+1.1 The subscription term is twelve (12) months, from 1 October 2025 to 30 September 2026. It does not renew automatically.
+
+2. FEES
+
+2.1 Platform fee. Customer shall pay a platform fee of USD 2,500 per month, invoiced monthly in advance on the first day of each month.
+
+2.2 Implementation services. Customer purchases a prepaid block of one hundred (100) implementation hours for USD 15,000, invoiced on the Order Start Date. Hours used beyond the prepaid block are billed at USD 175 per hour.
+
+2.3 API usage. The platform fee includes one million (1,000,000) API calls per month. Calls above the included amount are billed at USD 0.40 per one thousand (1,000) calls, monthly in arrears.
+
+3. SERVICE LEVEL
+
+3.1 If monthly uptime falls below 99.9%, Ledgerly will credit Customer ten percent (10%) of that month's platform fee.
+
+4. PAYMENT TERMS
+
+4.1 Invoices are due within fifteen (15) days of the invoice date and are paid through PayPal.
+
+4.2 Overdue amounts bear interest at one percent (1%) per month or part of a month, starting fifteen (15) days after the due date.
+
+5. RESELLER COMMISSION
+
+5.1 Ledgerly shall pay Northstar fifteen percent (15%) of the platform fees Ledgerly receives from Customer under Section 2.1, paid monthly.
+
+Accepted for Acme Logistics Co.: Priya Raman, Controller
+Accepted for Ledgerly Inc.: Tom Okafor, VP Sales

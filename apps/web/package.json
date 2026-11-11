@@ -1,0 +1,36 @@
+{
+  "name": "@clausework/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "@bryntum/gantt": "npm:@bryntum/gantt-trial@7.3.8",
+    "@bryntum/gantt-react": "7.3.8",
+    "@clausework/core": "workspace:*",
+    "ag-charts-community": "14.3.0",
+    "ag-charts-enterprise": "14.3.0",
+    "ag-grid-community": "36.3.0",
+    "ag-grid-enterprise": "36.3.0",
+    "ag-grid-react": "36.3.0",
+    "ag-studio": "3.1.0",
+    "ag-studio-react": "3.1.0",
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.5",
+    "@types/node": "^24",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tailwindcss": "4.3.5",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,271 @@
+@import "tailwindcss";
+
+/*
+ * Clausework: a legal document meets a ledger. Paper and ink for the reading surfaces, a verdigris
+ * seal for what both sides have agreed, a highlighter for clauses that carry money, and PayPal blue
+ * only where PayPal acts.
+ */
+@theme {
+  --color-paper: #f2f1ec;
+  --color-sheet: #ffffff;
+  --color-ink: #16213a;
+  --color-ink-2: #4a5468;
+  --color-ink-3: #858d9e;
+  --color-rule: #dedbd2;
+  --color-rule-2: #ebe9e3;
+  --color-seal: #0d6b57;
+  --color-seal-deep: #0a5444;
+  --color-seal-soft: #e2efe9;
+  --color-marker: #f7e9a6;
+  --color-marker-strong: #f0d55e;
+  --color-amber: #8f5a00;
+  --color-amber-soft: #fbf0d8;
+  --color-red: #b4232a;
+  --color-red-soft: #fbe8e7;
+  --color-paypal: #0070e0;
+  --color-paypal-deep: #003087;
+  --color-paypal-soft: #e8f1fc;
+
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
+
+  --radius-card: 10px;
+  --shadow-sheet: 0 1px 0 rgba(22, 33, 58, 0.04), 0 8px 24px -12px rgba(22, 33, 58, 0.14);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-seal);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  ::selection {
+    background: var(--color-marker-strong);
+  }
+}
+
+@layer components {
+  .num {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings:
+      "tnum" 1,
+      "lnum" 1;
+  }
+  .serif {
+    font-family: var(--font-serif);
+  }
+  .sheet {
+    background: var(--color-sheet);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-card);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 2.125rem;
+    padding: 0 0.9rem;
+    border-radius: 7px;
+    font-weight: 550;
+    font-size: 13.5px;
+    white-space: nowrap;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease,
+      color 120ms ease;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--color-seal);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-seal-deep);
+  }
+  .btn-quiet {
+    background: var(--color-sheet);
+    border: 1px solid var(--color-rule);
+    color: var(--color-ink);
+  }
+  .btn-quiet:hover:not(:disabled) {
+    border-color: var(--color-ink-3);
+  }
+  .btn-paypal {
+    background: var(--color-paypal);
+    color: #fff;
+  }
+  .btn-paypal:hover:not(:disabled) {
+    background: var(--color-paypal-deep);
+  }
+  .btn-danger {
+    background: var(--color-sheet);
+    border: 1px solid var(--color-red);
+    color: var(--color-red);
+  }
+  .field {
+    width: 100%;
+    background: var(--color-sheet);
+    border: 1px solid var(--color-rule);
+    border-radius: 7px;
+    padding: 0.5rem 0.7rem;
+    font-size: 14px;
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-seal);
+    box-shadow: 0 0 0 3px var(--color-seal-soft);
+  }
+  .label {
+    font-size: 12.5px;
+    font-weight: 550;
+    color: var(--color-ink-2);
+  }
+  /* The clause highlighter: a marker stroke under the words, not a box around them. */
+  .clause-mark {
+    background: linear-gradient(
+      transparent 12%,
+      var(--color-marker) 12%,
+      var(--color-marker) 92%,
+      transparent 92%
+    );
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 160ms ease;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  .clause-mark:hover,
+  .clause-mark[data-active="true"] {
+    background: linear-gradient(
+      transparent 6%,
+      var(--color-marker-strong) 6%,
+      var(--color-marker-strong) 96%,
+      transparent 96%
+    );
+  }
+  .clause-mark[data-arriving="true"] {
+    animation: mark-in 900ms ease-out both;
+  }
+  .hatched {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(180, 35, 42, 0.14) 0,
+      rgba(180, 35, 42, 0.14) 4px,
+      transparent 4px,
+      transparent 8px
+    );
+  }
+}
+
+@keyframes mark-in {
+  from {
+    background-size: 0% 100%;
+    background-repeat: no-repeat;
+  }
+  to {
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 220ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override every component's own animation. */
+    animation-duration: 1ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: as above, for transitions. */
+    transition-duration: 1ms !important;
+  }
+}
+
+/* ── Bryntum, dressed to match ────────────────────────────────────────────── */
+.cw-gantt {
+  --b-font-family: var(--font-sans);
+  --b-primary: var(--color-seal);
+  font-family: var(--font-sans);
+}
+.cw-gantt .b-grid-header {
+  background: var(--color-paper);
+}
+.cw-gantt .b-gantt-task.cw-phase {
+  background: #26365c;
+  border-radius: 5px;
+}
+.cw-gantt .b-gantt-task.cw-phase-done {
+  background: var(--color-seal);
+}
+.cw-gantt .b-gantt-task.cw-phase-blocked {
+  background-color: #fff;
+  border: 1.5px solid var(--color-red);
+  color: var(--color-red);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(180, 35, 42, 0.16) 0,
+    rgba(180, 35, 42, 0.16) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+.cw-gantt .b-gantt-task.cw-phase-blocked .b-gantt-task-content {
+  color: var(--color-red);
+  font-weight: 600;
+}
+.cw-gantt .b-sch-dependency.cw-gate {
+  stroke: var(--color-paypal);
+  stroke-dasharray: 4 3;
+}
+.cw-gantt .b-sch-dependency.cw-gate-blocking {
+  stroke: var(--color-red);
+}
+
+/* Rolled-up payment diamonds on a collapsed row keep their status colour. */
+.cw-gantt .b-task-rollup.cw-st-paid,
+.cw-gantt .b-task-rollup.cw-st-released {
+  background-color: var(--color-seal);
+}
+.cw-gantt .b-task-rollup.cw-st-overdue,
+.cw-gantt .b-task-rollup.cw-st-failed {
+  background-color: var(--color-red);
+}
+.cw-gantt .b-task-rollup.cw-st-scheduled,
+.cw-gantt .b-task-rollup.cw-st-cancelled {
+  background-color: #9aa1b0;
+}
+.cw-gantt .b-task-rollup.cw-st-issued {
+  background-color: var(--color-ink);
+}
+/* A group row with no dates of its own would show Bryntum's "unscheduled" calendar; the rolled-up
+   payments already show where it sits. */
+.cw-gantt .b-gantt-task-parent .b-icon-calendar {
+  display: none;
+}

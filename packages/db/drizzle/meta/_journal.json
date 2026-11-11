@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794362162689,
+      "tag": "0000_sturdy_arclight",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794415156951,
+      "tag": "0001_dbos_workflows",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794415275648,
+      "tag": "0002_rate_windows",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794419769912,
+      "tag": "0003_clear_demo_clock",
+      "breakpoints": true
+    }
+  ]
+}

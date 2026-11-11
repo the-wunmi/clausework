@@ -1,0 +1,79 @@
+MASTER SERVICES AGREEMENT AND STATEMENT OF WORK No. 1
+
+Brand System and Website Relaunch
+
+This Master Services Agreement (the "Agreement") is made on 16 November 2026 (the "Effective Date") between:
+
+Northwind Outfitters Inc., 410 Alder Street, Portland, OR 97204 ("Client"), accounts payable contact ap@northwind-outfitters.com; and
+
+Brightline Studio LLC, 88 Mercer Street, New York, NY 10012 ("Agency"), billing contact billing@brightline.studio.
+
+1. SERVICES
+
+1.1 Agency will design a brand system and relaunch Client's website as described in this Statement of Work, in three phases: Discovery, Design System, and Build & Launch (each a "Phase").
+
+1.2 Agency may engage Kinetic Motion Ltd ("Kinetic"), payments contact pay@kineticmotion.co, as a subcontractor for motion design in the Design System Phase. Agency remains responsible for Kinetic's work.
+
+2. TERM
+
+2.1 This Agreement starts on the Effective Date and continues for twenty-four (24) months, ending on 15 November 2028, unless terminated earlier under Section 9.
+
+3. PROJECT FEES
+
+3.1 Project fees. The total project fees for the three Phases are USD 48,000 (the "Project Fees").
+
+3.2 Deposit. Client shall pay a deposit of thirty percent (30%) of the Project Fees on signing this Agreement. Agency is not obliged to begin the Discovery Phase until the deposit has been received.
+
+3.3 Design System milestone. On delivery of the Design System Phase, Agency will invoice USD 19,200, payable within thirty (30) days of the invoice date.
+
+3.4 Launch milestone. On Client's acceptance of the launched website at the end of the Build & Launch Phase, Agency will invoice USD 14,400, payable within fifteen (15) days of the invoice date.
+
+3.5 Agency is not obliged to begin the Build & Launch Phase until the Design System invoice under Section 3.3 has been paid in full.
+
+3.6 Retainage. Client may withhold ten percent (10%) of each milestone payment under Sections 3.3 and 3.4 as retainage. Retainage is released to Agency thirty (30) days after Client's acceptance of the launched website.
+
+4. ONGOING SERVICES
+
+4.1 Monthly retainer. From 1 December 2026, Client shall pay Agency a retainer of USD 3,000 per month for brand stewardship and content production, billed monthly in advance.
+
+4.2 Escalation. The monthly retainer increases by three percent (3%) on each anniversary of the Effective Date.
+
+4.3 Support hours. The retainer includes up to twenty (20) hours of website support per calendar month. Support hours above twenty (20) in a month are billed at USD 40 per hour, in arrears. Agency will notify Client when support reaches eighty percent (80%) of the included hours in a month.
+
+5. SUBCONTRACTOR PAYMENT
+
+5.1 Agency shall pay Kinetic twenty percent (20%) of each payment Agency receives for the Design System milestone under Section 3.3, within five (5) business days of receipt.
+
+6. REFERRAL FEE
+
+6.1 Client was introduced to Agency by Harbor & Co. Partners ("Referrer"), payments contact fees@harborco.partners. Agency shall pay Referrer eight percent (8%) of all fees Agency receives from Client under Section 4.1, paid quarterly in arrears.
+
+7. INVOICING AND LATE PAYMENT
+
+7.1 All amounts are in United States dollars and are paid through PayPal.
+
+7.2 Any amount not paid by its due date bears a late payment charge of one and one-half percent (1.5%) of the overdue amount for each month or part of a month it remains unpaid.
+
+7.3 Client must raise any good-faith dispute about an invoice within ten (10) days of receiving it. Undisputed amounts remain payable.
+
+8. CHANGES
+
+8.1 Changes to scope, fees or schedule must be agreed in writing, which includes email between the billing contacts named above.
+
+9. TERMINATION
+
+9.1 Either party may terminate this Agreement on sixty (60) days' written notice. Client shall pay for all work performed up to the termination date, and the monthly retainer ends with the month in which termination takes effect.
+
+10. GENERAL
+
+10.1 This Agreement is governed by the laws of the State of New York.
+
+SCHEDULE A: PHASE PLAN
+
+Phase 1, Discovery: 23 November 2026 to 18 December 2026. Starts once the deposit is received.
+Phase 2, Design System: 4 January 2027 to 26 February 2027. Follows Discovery.
+Phase 3, Build & Launch: 8 March 2027 to 16 April 2027. Follows Design System and starts once the Design System invoice is paid.
+
+Signed for Northwind Outfitters Inc.: Dana Whitfield, VP Marketing
+
+Signed for Brightline Studio LLC: Marcus Reyes, Managing Partner

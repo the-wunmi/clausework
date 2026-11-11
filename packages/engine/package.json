@@ -1,0 +1,28 @@
+{
+  "name": "@clausework/engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@clausework/agents": "workspace:*",
+    "@clausework/billing": "workspace:*",
+    "@clausework/core": "workspace:*",
+    "@clausework/db": "workspace:*",
+    "@clausework/paypal": "workspace:*",
+    "@dbos-inc/dbos-sdk": "^5.5.0",
+    "drizzle-orm": "^0.45.4",
+    "pdfjs-dist": "^6.5.438",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
+  }
+}

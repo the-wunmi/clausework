@@ -1,0 +1,20 @@
+From: Dana Whitfield <ap@northwind-outfitters.com>
+To: Marcus Reyes <billing@brightline.studio>
+Date: Mon, 11 Jan 2027 09:12
+Subject: Spring catalogue push
+
+Hi Marcus, the spring catalogue moved up and we'll need some pages turned around faster than usual. Can we add a rush option to the retainer? Also, support has been heavy; happy to talk about the hourly rate.
+
+From: Marcus Reyes <billing@brightline.studio>
+To: Dana Whitfield <ap@northwind-outfitters.com>
+Date: Mon, 11 Jan 2027 11:40
+Subject: Re: Spring catalogue push
+
+Sure. Proposal: rush turnaround (under 48 hours) at USD 250 per request, invoiced monthly in arrears with the support hours. And from 1 February 2027 we'd move support above the included 20 hours to USD 45 an hour, which reflects the senior developer we've put on your account.
+
+From: Dana Whitfield <ap@northwind-outfitters.com>
+To: Marcus Reyes <billing@brightline.studio>
+Date: Mon, 11 Jan 2027 14:05
+Subject: Re: Spring catalogue push
+
+ok, add the rush option for $250 a request and the $45 rate from February. Please put it through so it shows on the plan.

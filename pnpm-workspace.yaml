@@ -1,0 +1,9 @@
+packages:
+  - packages/*
+  - apps/*
+allowBuilds:
+  "@bryntum/gantt-trial": true
+  "@bryntum/gantt-trial-lib": true
+  esbuild: true
+minimumReleaseAgeExclude:
+  - "@anthropic-ai/sdk@1.8.0"

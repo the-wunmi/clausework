@@ -1,0 +1,10 @@
+node_modules
+dist
+.next
+.turbo
+.env
+*.log
+coverage
+next-env.d.ts
+packages/agents/eval/reports
+.uploads

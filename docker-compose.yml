@@ -1,0 +1,95 @@
+# Postgres, plus the API and web app under the `app` profile.
+#   Development: pnpm db:up                                  (Postgres only; run the apps with pnpm dev)
+#   Server:      docker compose --profile app up -d --build  (everything)
+# Settings and secrets come from .env (Compose reads it from this directory); nothing secret lives
+# in this file. POSTGRES_PASSWORD is applied only when the volume is first created: to change it
+# later, run ALTER ROLE inside the database as well.
+
+x-hardening: &hardening
+  restart: unless-stopped
+  init: true
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "5"
+
+services:
+  postgres:
+    # Pinned to a digest so a rebuilt tag cannot change what runs. Bump deliberately.
+    image: postgres:17.11-alpine@sha256:e5d2edd28b1f8d40a0a6c0c9cdc545b19b56a0d5d88f94bc11a97d970d4700d0
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-clausework}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-clausework}
+    ports:
+      # Loopback only, for pnpm dev on the host; the app containers use the Compose network.
+      - "127.0.0.1:${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    security_opt:
+      - no-new-privileges:true
+    shm_size: 128mb
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  api:
+    <<: *hardening
+    profiles: [app]
+    build:
+      context: .
+      target: api
+    image: clausework-api
+    env_file: .env
+    environment:
+      # Inside the Compose network the database is postgres:5432, whatever .env says for pnpm dev.
+      DATABASE_URL: postgres://${POSTGRES_USER:-clausework}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-clausework}
+      DBOS_SYSTEM_DATABASE_URL: postgres://${POSTGRES_USER:-clausework}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-clausework}_dbos
+    tmpfs:
+      - /tmp
+    ports:
+      # For the reverse proxy's /api/webhooks/paypal route. Loopback only.
+      - "127.0.0.1:${API_PORT:-4100}:4100"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Time to stop taking requests, checkpoint workflows and close the database pools.
+    stop_grace_period: 30s
+
+  web:
+    <<: *hardening
+    profiles: [app]
+    build:
+      context: .
+      target: web
+      args:
+        NEXT_PUBLIC_AG_GRID_LICENSE: ${NEXT_PUBLIC_AG_GRID_LICENSE:-}
+        NEXT_PUBLIC_AG_STUDIO_LICENSE: ${NEXT_PUBLIC_AG_STUDIO_LICENSE:-}
+    image: clausework-web
+    # Only what the web server itself uses: the assistant's model key and where the API is.
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUSEWORK_MODEL: ${CLAUSEWORK_MODEL:-}
+      CLAUSEWORK_API_ORIGIN: http://api:4100
+    tmpfs:
+      - /app/apps/web/.next/cache
+      - /tmp
+    ports:
+      # For the reverse proxy. Loopback only.
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    stop_grace_period: 15s
+
+volumes:
+  pgdata:

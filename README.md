@@ -100,18 +100,24 @@ are deterministic, so queueing the same day's rules or the same webhook twice is
 
 ## Run it
 
-Requires Node 24, pnpm, Docker, an Anthropic API key and a PayPal sandbox app.
+Requires Node 24, Docker, an Anthropic API key and a PayPal sandbox app (see
+[PayPal sandbox](#paypal-sandbox) for its keys).
 
 ```sh
+corepack enable               # provides the pnpm version pinned in package.json
 pnpm install
 cp .env.example .env && chmod 600 .env
 # A random database password, written into POSTGRES_PASSWORD and both database URLs:
 pw=$(openssl rand -hex 24) && sed -i.bak "s/^POSTGRES_PASSWORD=$/POSTGRES_PASSWORD=$pw/; s/<POSTGRES_PASSWORD>/$pw/g" .env && rm .env.bak
-pnpm db:up                    # Postgres 17 on :5434, credentials from .env
-pnpm dev                      # API :4100, web :3000
 ```
 
-Then add `ANTHROPIC_API_KEY` and the PayPal sandbox keys to `.env`.
+Put `ANTHROPIC_API_KEY`, `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` in `.env` (each setting is
+explained in `.env.example`), then:
+
+```sh
+pnpm db:up                    # Postgres 17 on :5434, credentials from .env
+pnpm dev                      # API :4100 (runs migrations on start), web :3000
+```
 
 On first start the API prints the **owner key** once. Sign in with it at <http://localhost:3000>.
 Only its hash is kept; `pnpm owner-key:reset` issues a new one. Parties to an agreement never need
@@ -133,11 +139,13 @@ CLAUSEWORK_OWNER_KEY=cw_… pnpm seed:demo
 3. Apps & Credentials → Sandbox → Create App, owned by that US business account, with Invoicing,
    Subscriptions, Payouts and Transaction Search enabled.
 4. Put the app's client ID and secret in `.env` as `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`.
-5. Expose the API over HTTPS (for example `cloudflared tunnel --url http://localhost:3000`), then run
-   `pnpm webhook:register https://<public host>`. It subscribes the app's webhook to the events
-   Clausework handles and saves `PAYPAL_WEBHOOK_ID` to `.env`. Restart the API.
+5. Webhooks need the app at a public HTTPS address. Once it has one (see [Hosting](#hosting)), run
+   `pnpm webhook:register https://<your domain>`: it subscribes the app's webhook to the events
+   Clausework handles and saves `PAYPAL_WEBHOOK_ID` to `.env`. Restart the API. Without webhooks,
+   for example on a laptop, the PayPal check that runs every two minutes still picks up payments.
 6. Payouts need available balance in the sandbox business account; payments it has just received can
-   take a while to become available. A refused payout is shown in Activity and retried with backoff (5 minutes, doubling, at most 6 hours).
+   take a while to become available. A refused payout is shown in Activity and retried with backoff
+   (5 minutes, doubling, at most 6 hours).
 7. Usage-Based Billing is in limited release. When `/v1/commerce/billing/activate` refuses, usage is
    invoiced at period close instead, and the UI says so.
 
@@ -158,14 +166,53 @@ pnpm --filter @clausework/web exec next start -p 3000   # with the API running o
 
 ### Hosting
 
-Docker Compose runs the whole stack (`Dockerfile`, `docker-compose.yml`): Postgres, the API and
-the web app, each published on loopback only, behind your own HTTPS reverse proxy.
+Docker Compose runs the whole stack (`Dockerfile`, `docker-compose.yml`): Postgres, the API and the
+web app, each published on loopback only, behind your own HTTPS reverse proxy. The host needs only
+Docker with the Compose and Buildx plugins, about 3 GB of memory for the web build, and a domain.
+
+1. Clone the repo and create `.env` with the `cp` and password commands from [Run it](#run-it).
+   Then set:
+   - `ANTHROPIC_API_KEY`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` and `PAYPAL_MODE` (`sandbox`
+     or `live`)
+   - `CLAUSEWORK_PUBLIC_URL=https://<your domain>`, the address people open the app at; portal and
+     PayPal return links are built from it
+   - recommended: `CLAUSEWORK_OWNER_KEY=cw_<random>` (e.g. from `openssl rand -hex 24`), so no key
+     is printed to the logs
+   - optional: `CLAUSEWORK_ALERT_WEBHOOK_URL`, and the `NEXT_PUBLIC_*` licence keys, which are built
+     into the web image
+2. Start everything; the API runs its migrations and resumes any interrupted workflow:
+
+   ```sh
+   docker compose --profile app up -d --build --wait
+   ```
+
+3. Point your reverse proxy at it:
+   - `/api/webhooks/paypal` → `127.0.0.1:4100`, so PayPal's signed body reaches the API untouched
+   - everything else → `127.0.0.1:3000` (the web app proxies the rest of `/api/*`)
+   - allow request bodies up to about 31 MB, send `Strict-Transport-Security`, and pass
+     `X-Forwarded-Host` through
+
+   A proxy that runs in Docker can join the `clausework_default` network and use `api:4100` and
+   `web:3000` instead.
+4. Register the PayPal webhook (writes `PAYPAL_WEBHOOK_ID` into `.env`), then recreate the API:
+
+   ```sh
+   docker compose run --rm --no-deps -v "$PWD/.env:/app/.env" api tsx src/register-webhook.ts https://<your domain>
+   docker compose --profile app up -d api
+   ```
+
+Day to day:
 
 ```sh
-docker compose --profile app up -d --build --wait
+docker compose logs -f api                              # without CLAUSEWORK_OWNER_KEY, the first start prints the owner key here
+docker compose exec api tsx scripts/seed.ts             # load the sample agreements (needs CLAUSEWORK_OWNER_KEY)
+docker compose exec api tsx src/reset-owner-key.ts      # new owner key, ending every session (when it is not set in .env)
+git pull && docker compose --profile app up -d --build --wait && docker image prune -f   # update
 ```
 
-The proxy sends `/api/webhooks/paypal` to `127.0.0.1:4100` and everything else to `127.0.0.1:3000`.
+The containers run as a non-root user with read-only filesystems and no Linux capabilities, restart
+on failure, and have health checks (`GET /api/health`; `GET /api/ready` is 503 while the database is
+down). Routes that call the model are limited per hour; also set a spend limit on the Anthropic key.
 
 ## Tests and evals
 
@@ -183,14 +230,14 @@ overdue invoices, gating payments and effective-dated amendments, on the PayPal 
 scripted agents, so every run is deterministic. The workflow tests check that the schedule runs
 each agreement's day once, that a lost webhook is recovered by the PayPal check, that stuck work is
 swept up, that lanes exclude each other across connection pools, and that alerts are delivered
-once each. CI (`.github/workflows/ci.yml`) runs lint, types, tests and the web build.
+once each. CI (`.github/workflows/ci.yml`) runs lint, types, a dependency audit, tests and the web
+build, and builds both Docker images.
 
 ## Honest limits
 
 - One workspace with one owner. The owner signs in with the owner key; parties reach only their own
   lines through unguessable portal links (an HMAC of the agreement and party). There are no
   separate user accounts or roles.
-
 - Legal advice is out of scope. Clausework bills what both parties approved.
 - Automatic recovery only works for money that moved through Clausework. For outside payments, the
   audit produces a claim with the clause, the expected amount and the actual charge.

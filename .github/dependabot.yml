@@ -1,7 +1,11 @@
-# Weekly update PRs for the pinned GitHub Actions, the Postgres image and npm dependencies.
+# Weekly update PRs for the pinned GitHub Actions, the base images and npm dependencies.
 version: 2
 updates:
   - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly

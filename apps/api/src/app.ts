@@ -81,13 +81,15 @@ export function createApp(e: Engine) {
     (await engine.withinRate(e.db, `login:${clientOf(c)}`, LOGIN_FAILURES_PER_HOUR)) &&
     (await engine.withinRate(e.db, 'login:all', LOGIN_FAILURES_PER_HOUR_ALL));
 
-  /** The owner: a bearer key (scripts) or a session cookie (the browser). */
-  const owner = async (c: Context): Promise<'bearer' | 'session' | null> => {
+  /**
+   * The owner: a bearer key (scripts) or a session cookie (the browser). A wrong bearer key counts
+   * against the same limits as a wrong sign-in, and is refused with 429 once they are spent.
+   */
+  const owner = async (c: Context): Promise<'bearer' | 'session' | 'limited' | null> => {
     const auth = c.req.header('authorization');
     if (auth?.startsWith('Bearer ')) {
       if (await engine.ownerKeyIsValid(e.db, auth.slice(7).trim())) return 'bearer';
-      await countWrongKey(c);
-      return null;
+      return (await countWrongKey(c)) ? null : 'limited';
     }
     const session = getCookie(c, SESSION_COOKIE);
     return session && (await engine.sessionIsValid(e, session)) ? 'session' : null;
@@ -192,6 +194,9 @@ export function createApp(e: Engine) {
   // ── Everything below is the owner's ────────────────────────────────────────
   app.use('/api/*', async (c, next) => {
     const how = await owner(c);
+    if (how === 'limited') {
+      return json({ error: 'rate_limited', message: 'Too many attempts. Try again later.' }, 429);
+    }
     if (!how) {
       return json({ error: 'unauthenticated', message: 'Sign in with the owner key' }, 401);
     }

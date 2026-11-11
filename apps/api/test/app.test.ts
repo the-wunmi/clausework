@@ -181,4 +181,20 @@ describe('who may do what', () => {
     expect(statuses[20]).toBe(429);
     expect((await post('/api/session', { key: ownerKey }, from)).status).toBe(200);
   });
+
+  it('limits wrong bearer keys the same way', async () => {
+    const from = { 'x-forwarded-for': '203.0.113.10' };
+    const statuses: number[] = [];
+    for (let i = 0; i < 21; i++) {
+      const res = await app.request('/api/agreements', {
+        headers: { ...from, authorization: `Bearer cw_guess_${i}` },
+      });
+      statuses.push(res.status);
+    }
+    expect(statuses.slice(0, 20).every((s) => s === 401)).toBe(true);
+    expect(statuses[20]).toBe(429);
+    expect(
+      (await app.request('/api/agreements', { headers: { ...from, ...asOwner() } })).status,
+    ).toBe(200);
+  });
 });

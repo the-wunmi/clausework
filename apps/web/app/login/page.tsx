@@ -6,9 +6,20 @@ import { Wordmark } from '@/components/shell';
 import { Spinner } from '@/components/ui';
 import { ApiError, api } from '@/lib/api';
 
-/** Only paths inside this app: a `next` pointing elsewhere would make sign-in an open redirect. */
+/**
+ * Only paths inside this app: a `next` pointing elsewhere would make sign-in an open redirect.
+ * Resolved the way the browser would (`/\evil.com` is another host), then held to this origin.
+ */
 function safeNext(next: string | null): string {
-  return next?.startsWith('/') && !next.startsWith('//') ? next : '/';
+  if (typeof window === 'undefined') return '/';
+  if (!next?.startsWith('/')) return '/';
+  if ([...next].some((ch) => ch === '\\' || ch.charCodeAt(0) < 0x20)) return '/';
+  try {
+    const url = new URL(next, window.location.origin);
+    return url.origin === window.location.origin ? url.pathname + url.search + url.hash : '/';
+  } catch {
+    return '/';
+  }
 }
 
 function SignIn() {

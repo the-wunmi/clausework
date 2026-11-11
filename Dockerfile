@@ -62,7 +62,7 @@ ENV NEXT_PUBLIC_AG_GRID_LICENSE=$NEXT_PUBLIC_AG_GRID_LICENSE \
     NEXT_PUBLIC_AG_STUDIO_LICENSE=$NEXT_PUBLIC_AG_STUDIO_LICENSE \
     CLAUSEWORK_API_ORIGIN=$CLAUSEWORK_API_ORIGIN \
     NEXT_OUTPUT=standalone
-RUN pnpm --filter @clausework/web exec next build --webpack
+RUN pnpm --filter @clausework/web build
 
 FROM ${NODE_IMAGE} AS web
 ENV NODE_ENV=production \

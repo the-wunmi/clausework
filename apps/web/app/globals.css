@@ -240,10 +240,8 @@
   color: var(--color-red);
   font-weight: 600;
 }
-/* Payment labels sit above the dependency lines that pass through them. */
-.cw-gantt .b-sch-label-right {
-  position: relative;
-  z-index: 6;
+/* A backing keeps payment labels readable where a dependency line runs behind them. */
+.cw-gantt .b-sch-label-after {
   padding: 0 4px;
   border-radius: 4px;
   background: #fff;

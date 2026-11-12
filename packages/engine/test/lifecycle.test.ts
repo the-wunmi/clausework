@@ -1,7 +1,14 @@
 import { agentDecisions, charges, ledgerEntries } from '@clausework/db';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import { agreementDetail, decide, loadAgreement, loadLive, recordUsage } from '../src/index.ts';
+import {
+  agreementDetail,
+  chargeTrace,
+  decide,
+  loadAgreement,
+  loadLive,
+  recordUsage,
+} from '../src/index.ts';
 import {
   action,
   agencyWithRetainage,
@@ -165,6 +172,38 @@ describe('an agreement from approval to money moving', () => {
     expect(rows.find((c) => c.chargeKey === 'retainage')).toMatchObject({
       status: 'issued',
       amount: 120_000n,
+    });
+  });
+
+  it('traces a paid milestone to its clause, the tests that prove it and the money that moved', async () => {
+    const engine = await testEngine(
+      new ScriptedScheduleAgent(() => ({ summary: '', actions: [] })),
+    );
+    await setToday(engine, '2027-01-04');
+    const id = await compiledAgreement(engine, agencyWithRetainage());
+    await approveAll(engine, id);
+    await setToday(engine, '2027-04-02');
+    await deliver(engine, id, 'design', '2027-04-02');
+    await run(engine);
+    const milestone = (await chargeRows(engine, id)).find((c) => c.chargeKey === 'phase_2')!;
+    await engine.simulator.payInvoice(milestone.paypalRef!, payer);
+    await run(engine);
+
+    const agreement = await loadAgreement(engine.db, id);
+    const trace = await chargeTrace(engine, agreement, milestone.id);
+    expect(trace.obligation?.key).toBe(milestone.obligationKey);
+    expect(trace.clauses.length).toBeGreaterThan(0);
+    expect(trace.clauses.every((c) => c.quote.length > 0 && c.found)).toBe(true);
+    expect(trace.tests.length).toBeGreaterThan(0);
+    expect(trace.tests.every((t) => t.obligation === milestone.obligationKey)).toBe(true);
+    const types = trace.events.map((e) => e.type);
+    expect(types.indexOf('invoice_issued')).toBeGreaterThanOrEqual(0);
+    expect(types.indexOf('payment_received')).toBeGreaterThan(types.indexOf('invoice_issued'));
+    expect(trace.movements).toContainEqual(
+      expect.objectContaining({ kind: 'collected', amount: '1080000' }),
+    );
+    await expect(chargeTrace(engine, agreement, 'not-a-charge')).rejects.toMatchObject({
+      code: 'not_found',
     });
   });
 

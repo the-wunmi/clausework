@@ -4,6 +4,7 @@ import type {
   ApprovalDecision,
   AuditInput,
   AuditView,
+  ChargeTraceView,
   DecisionView,
   EventView,
   LedgerAnswer,
@@ -130,6 +131,8 @@ export const api = {
     request<AgreementDetail>(`/api/agreements/${enc(id)}/activate`, { method: 'POST' }),
   events: (id: string) => request<EventView[]>(`/api/agreements/${enc(id)}/events`),
   decisions: (id: string) => request<DecisionView[]>(`/api/agreements/${enc(id)}/decisions`),
+  chargeTrace: (id: string, chargeId: string) =>
+    request<ChargeTraceView>(`/api/agreements/${enc(id)}/charges/${enc(chargeId)}/trace`),
   recordUsage: (id: string, body: UsageInput) =>
     request<AgreementDetail>(`/api/agreements/${enc(id)}/usage`, { method: 'POST', body }),
   movePhase: (id: string, phase: string, body: PhaseInput) =>

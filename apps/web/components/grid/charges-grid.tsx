@@ -3,6 +3,8 @@
 import type { ChargeView, LedgerRow } from '@clausework/core';
 import type {
   ColDef,
+  ExcelStyle,
+  GridApi,
   GridReadyEvent,
   IAggFuncParams,
   ICellRendererParams,
@@ -14,6 +16,7 @@ import {
   chargeStatus,
   day,
   KIND_LABEL,
+  minorDigits,
   money,
   PRODUCT_LABEL,
   retainageNote,
@@ -21,6 +24,7 @@ import {
   uniqueRefs,
 } from '@/lib/format';
 import { ChargeStatusPill } from '../ui';
+import { ChargeTrace } from './charge-trace';
 import { GRID_LICENSE, GRID_MODULES, ledgerTheme } from './setup';
 
 export type Row = ChargeView &
@@ -87,6 +91,61 @@ function DirectionCell(p: ICellRendererParams<Row>) {
   );
 }
 
+/** Excel keeps amounts as numbers, in major units with two decimals, so they sum in a sheet. */
+const EXCEL_STYLES: ExcelStyle[] = [
+  { id: 'amount', numberFormat: { format: '#,##0.00' } },
+  { id: 'header', font: { bold: true } },
+];
+
+/** Every column a reviewer needs to check a charge, including those hidden in the grid. */
+const EXPORT_COLUMNS = [
+  'agreementTitle',
+  'counterparty',
+  'label',
+  'kind',
+  'direction',
+  'payerName',
+  'payeeName',
+  'amount',
+  'currency',
+  'status',
+  'dueDate',
+  'daysOverdue',
+  'paidOn',
+  'clauseRefs',
+  'basis',
+  'paypalProduct',
+  'paypalRef',
+];
+
+function exportToExcel(api: GridApi<Row>) {
+  const on = new Date().toISOString().slice(0, 10);
+  api.exportDataAsExcel({
+    fileName: `clausework-ledger-${on}.xlsx`,
+    sheetName: 'Charges',
+    columnKeys: EXPORT_COLUMNS.filter((k) => api.getColumn(k)),
+    skipRowGroups: true,
+    // Leaves only: group rows and totals are rebuilt in the sheet from the numbers.
+    shouldRowBeSkipped: (p) => !p.node.data,
+    processCellCallback: (p) => {
+      const r = p.node?.data as Row | undefined;
+      const id = p.column.getColId();
+      if (!r) return p.value;
+      // The one place money leaves minor units: a spreadsheet needs a number it can add up.
+      if (id === 'amount')
+        return r.amount === null ? '' : Number(r.amount) / 10 ** minorDigits(r.currency);
+      if (id === 'label') return tidyLabel(r.label);
+      if (id === 'kind') return KIND_LABEL[r.kind];
+      if (id === 'status') return chargeStatus(r).label;
+      if (id === 'paypalProduct') return r.paypalProduct ? PRODUCT_LABEL[r.paypalProduct] : '';
+      if (id === 'direction')
+        return r.direction === 'in' ? 'In' : r.direction === 'out' ? 'Out' : 'Between others';
+      return p.value ?? '';
+    },
+    author: 'Clausework',
+  });
+}
+
 export function ChargesGrid({
   rows,
   portfolio = false,
@@ -103,6 +162,7 @@ export function ChargesGrid({
   const currency = rows[0]?.currency ?? 'USD';
   // Periods with nothing to bill, and charges from before the plan ran here, are kept for the record but hidden until asked for.
   const [showSkipped, setShowSkipped] = useState(false);
+  const [api, setApi] = useState<GridApi<Row> | null>(null);
   const skipped = rows.filter((r) => r.status === 'cancelled').length;
   const shown = useMemo(
     () => (showSkipped ? rows : rows.filter((r) => r.status !== 'cancelled')),
@@ -132,8 +192,10 @@ export function ChargesGrid({
         colId: 'label',
         field: 'label',
         headerName: 'Charge',
-        minWidth: 230,
+        minWidth: 250,
         flex: 1.4,
+        // The chevron that opens the charge's trace: its clause, tests and history.
+        cellRenderer: 'agGroupCellRenderer',
         valueFormatter: (p: ValueFormatterParams<Row>) => tidyLabel(String(p.value ?? '')),
         tooltipValueGetter: (p) => tidyLabel(String(p.value ?? '')),
       },
@@ -179,11 +241,13 @@ export function ChargesGrid({
         valueGetter: (p) => minorNumber(p.data),
         aggFunc: sumAmounts,
         enableValue: true,
+        cellClass: 'amount',
         valueFormatter: (p: ValueFormatterParams<Row>) =>
           p.value === null || p.value === undefined
             ? 'Variable'
             : money(String(Math.round(p.value as number)), p.data?.currency ?? currency),
       },
+      { colId: 'currency', field: 'currency', headerName: 'Currency', hide: true },
       {
         colId: 'status',
         field: 'status',
@@ -269,16 +333,30 @@ export function ChargesGrid({
 
   return (
     <AgGridProvider modules={GRID_MODULES} licenseKey={GRID_LICENSE}>
-      {skipped > 0 && (
-        <label className="mb-2 flex items-center justify-end gap-2 text-[12.5px] text-ink-2">
-          <input
-            type="checkbox"
-            checked={showSkipped}
-            onChange={(e) => setShowSkipped(e.target.checked)}
-          />
-          Show skipped periods ({skipped})
-        </label>
-      )}
+      <div className="mb-2 flex items-center justify-end gap-4 text-[12.5px] text-ink-2">
+        <span className="mr-auto text-ink-3">
+          Open a charge to see its clause, tests and history.
+        </span>
+        {skipped > 0 && (
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={showSkipped}
+              onChange={(e) => setShowSkipped(e.target.checked)}
+            />
+            Show skipped periods ({skipped})
+          </label>
+        )}
+        <button
+          type="button"
+          className="btn btn-quiet h-7 text-[12.5px]"
+          disabled={!api}
+          onClick={() => api && exportToExcel(api)}
+          title="Every charge with its clause, how it was computed and its PayPal reference"
+        >
+          Export to Excel
+        </button>
+      </div>
       <div style={{ height }}>
         <AgGridReact<Row>
           ref={gridRef}
@@ -288,7 +366,8 @@ export function ChargesGrid({
           defaultColDef={defaultColDef}
           getRowId={(p) => p.data.id}
           rowGroupPanelShow={portfolio ? 'always' : 'never'}
-          groupDefaultExpanded={1}
+          // Groups open; a charge's trace opens only when asked for.
+          isGroupOpenByDefault={(p) => p.rowNode.group === true && p.level === 0}
           grandTotalRow={portfolio ? 'bottom' : undefined}
           suppressAggFuncInHeader
           animateRows
@@ -297,7 +376,13 @@ export function ChargesGrid({
           sideBar={
             portfolio ? { toolPanels: ['columns', 'filters'], hiddenByDefault: true } : undefined
           }
-          onGridReady={onReady}
+          masterDetail
+          detailCellRenderer={ChargeTrace}
+          excelStyles={EXCEL_STYLES}
+          onGridReady={(e) => {
+            setApi(e.api);
+            onReady?.(e);
+          }}
           overlayNoRowsTemplate='<span style="color:#858d9e">No charges yet. They appear here once the plan goes live.</span>'
         />
       </div>

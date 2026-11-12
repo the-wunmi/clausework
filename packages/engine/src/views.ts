@@ -3,6 +3,7 @@ import type {
   AgreementDetail,
   AgreementSummary,
   AuditView,
+  ChargeTraceView,
   ChargeView,
   ClauseView,
   DecisionView,
@@ -14,6 +15,7 @@ import type {
   PortalView,
   SetupStep,
   Stage,
+  TestView,
   Totals,
   VersionView,
 } from '@clausework/core';
@@ -27,7 +29,7 @@ import {
   events,
   ledgerEntries,
 } from '@clausework/db';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { portalToken } from './compile.ts';
 import { type Engine, today } from './context.ts';
 import { clauseRefs } from './live.ts';
@@ -37,6 +39,7 @@ import {
   type AgreementRow,
   activeVersion,
   currentVersion,
+  isUuid,
   lastApprovalByParty,
   latestApprovals,
   listVersions,
@@ -461,6 +464,32 @@ export async function portalView(
   };
 }
 
+const eventView = (e: typeof events.$inferSelect): EventView => ({
+  id: e.id,
+  actor: e.actor,
+  type: e.type,
+  summary: e.summary,
+  clauseIds: e.clauseIds,
+  data: e.data as Record<string, unknown>,
+  occurredOn: e.occurredOn,
+  createdAt: e.createdAt.toISOString(),
+});
+
+const decisionView = (d: typeof agentDecisions.$inferSelect): DecisionView => ({
+  id: d.id,
+  trigger: d.trigger as DecisionView['trigger'],
+  proposal: (d.proposal ?? {
+    action: 'none',
+    rationale: '',
+    clauseId: null,
+    clauseQuote: null,
+  }) as DecisionView['proposal'],
+  outcome: d.outcome as DecisionView['outcome'],
+  decidedBy: d.decidedBy,
+  occurredOn: d.occurredOn,
+  createdAt: d.createdAt.toISOString(),
+});
+
 export async function eventViews(engine: Engine, agreementId: string): Promise<EventView[]> {
   const rows = await engine.db
     .select()
@@ -468,18 +497,7 @@ export async function eventViews(engine: Engine, agreementId: string): Promise<E
     .where(eq(events.agreementId, agreementId))
     .orderBy(desc(events.createdAt))
     .limit(300);
-  return plain(
-    rows.map((e) => ({
-      id: e.id,
-      actor: e.actor,
-      type: e.type,
-      summary: e.summary,
-      clauseIds: e.clauseIds,
-      data: e.data as Record<string, unknown>,
-      occurredOn: e.occurredOn,
-      createdAt: e.createdAt.toISOString(),
-    })),
-  );
+  return plain(rows.map(eventView));
 }
 
 export async function decisionViews(engine: Engine, agreementId: string): Promise<DecisionView[]> {
@@ -489,24 +507,78 @@ export async function decisionViews(engine: Engine, agreementId: string): Promis
     .where(eq(agentDecisions.agreementId, agreementId))
     .orderBy(desc(agentDecisions.occurredOn), desc(agentDecisions.createdAt))
     .limit(100);
-  return plain(
-    rows
-      .filter((d) => d.decidedBy !== 'pending')
-      .map((d) => ({
-        id: d.id,
-        trigger: d.trigger as DecisionView['trigger'],
-        proposal: (d.proposal ?? {
-          action: 'none',
-          rationale: '',
-          clauseId: null,
-          clauseQuote: null,
-        }) as DecisionView['proposal'],
-        outcome: d.outcome as DecisionView['outcome'],
-        decidedBy: d.decidedBy,
-        occurredOn: d.occurredOn,
-        createdAt: d.createdAt.toISOString(),
-      })),
-  );
+  return plain(rows.filter((d) => d.decidedBy !== 'pending').map(decisionView));
+}
+
+/**
+ * One charge traced to its source. The clauses and tests come from the version that laid the
+ * charge out, not the newest one, so an amendment awaiting approval never rewrites its history.
+ */
+export async function chargeTrace(
+  engine: Engine,
+  agreement: AgreementRow,
+  chargeId: string,
+): Promise<ChargeTraceView> {
+  const [charge] = isUuid(chargeId)
+    ? await engine.db
+        .select()
+        .from(charges)
+        .where(and(eq(charges.id, chargeId), eq(charges.agreementId, agreement.id)))
+    : [];
+  if (!charge) throw new DomainError('not_found', 'No such charge');
+  const version = charge.versionId
+    ? await loadVersion(engine.db, charge.versionId)
+    : await activeVersion(engine.db, agreement);
+  if (!version) throw new DomainError('not_found', 'The charge has no plan version');
+  const { plan } = version;
+  const o = plan.obligations.find((x) => x.key === charge.obligationKey) ?? null;
+  const [decisionRows, eventRows, movementRows] = await Promise.all([
+    engine.db
+      .select()
+      .from(agentDecisions)
+      .where(
+        and(
+          eq(agentDecisions.agreementId, agreement.id),
+          sql`${agentDecisions.trigger}->>'chargeId' = ${charge.id}`,
+        ),
+      )
+      .orderBy(asc(agentDecisions.createdAt)),
+    engine.db
+      .select()
+      .from(events)
+      .where(
+        and(eq(events.agreementId, agreement.id), sql`${events.data}->>'chargeId' = ${charge.id}`),
+      )
+      .orderBy(asc(events.createdAt)),
+    engine.db
+      .select()
+      .from(ledgerEntries)
+      .where(eq(ledgerEntries.chargeId, charge.id))
+      .orderBy(asc(ledgerEntries.createdAt)),
+  ]);
+  return plain({
+    chargeId: charge.id,
+    version: version.row.version,
+    obligation: o
+      ? { key: o.key, title: o.title, kind: o.kind, explanation: explainObligation(plan, o) }
+      : null,
+    clauses: plan.clauses
+      .filter((c) => charge.clauseIds.includes(c.id))
+      .map((c) => ({ id: c.id, ref: c.ref, quote: c.quote, found: version.spans[c.id] != null })),
+    tests: (version.row.testResults as TestView[]).filter(
+      (t) => t.obligation === charge.obligationKey,
+    ),
+    decisions: decisionRows.filter((d) => d.decidedBy !== 'pending').map(decisionView),
+    events: eventRows.map(eventView),
+    movements: movementRows.map((l) => ({
+      kind: l.kind,
+      amount: l.amount.toString(),
+      currency: l.currency,
+      occurredOn: l.occurredOn,
+      paypalRef: l.paypalRef,
+      memo: l.memo,
+    })),
+  });
 }
 
 export async function ledgerRows(engine: Engine): Promise<LedgerRow[]> {

@@ -270,9 +270,14 @@ build, and builds both Docker images.
   Invoicing v2, Payouts, Transaction Search and Webhooks, all run against the sandbox. Usage-Based
   Billing is wired in for accounts with the limited release.
 - **AI:** Claude Opus 5.5 through the Anthropic API.
-- **Sponsor tools:** [AG Grid](https://www.ag-grid.com) and AG Studio (the ledger and its
-  assistant, on the Agent Framework) and the [Bryntum Gantt](https://bryntum.com/products/gantt/)
-  (delivery phases with payments as dependencies).
+- **Sponsor tools:**
+  - [AG Grid](https://www.ag-grid.com) Enterprise and AG Studio:
+    - the ledger of every charge, with row grouping, set filters and integrated charts;
+    - a master/detail trace on each charge: the clause it comes from (verbatim), the tests that prove its amount, the agent's decisions and the PayPal money that moved;
+    - an Excel export with clause citations;
+    - a cash forecast with bar sparklines per agreement and a pivot by month;
+    - an AG Studio assistant on the Agent Framework, which explains charges, finds risk and reminds payers.
+  - The [Bryntum Gantt](https://bryntum.com/products/gantt/): delivery phases with payments as dependencies.
 - **App:** TypeScript on Node 24, pnpm and Turborepo, Hono, Next.js 16, PostgreSQL 17, Drizzle,
   [DBOS](https://dbos.dev) durable workflows, Zod, Vitest and Biome.
 - **Hosting:** Docker Compose behind Caddy on AWS EC2, with Cloudflare in front and GitHub Actions

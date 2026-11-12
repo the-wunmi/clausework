@@ -13,6 +13,10 @@ const StudioDashboard = dynamic(() => import('@/components/ledger/studio-dashboa
   ssr: false,
   loading: () => <Skeleton className="h-full w-full" />,
 });
+const CashForecast = dynamic(
+  () => import('@/components/ledger/cash-forecast').then((m) => m.CashForecast),
+  { ssr: false, loading: () => <Skeleton className="h-[600px]" /> },
+);
 const AskGrid = dynamic(() => import('@/components/ledger/ask-grid').then((m) => m.AskGrid), {
   ssr: false,
   loading: () => <Skeleton className="h-[600px]" />,
@@ -38,12 +42,13 @@ class StudioBoundary extends Component<
 const VIEWS = [
   ['studio', 'Dashboard and agent'],
   ['table', 'Ledger table'],
+  ['forecast', 'Cash forecast'],
 ] as const;
 
 export default function LedgerPage() {
   const { meta } = useApp();
   const ledger = useResource(api.ledger, [], 20_000);
-  const [view, setView] = useState<'studio' | 'table'>('studio');
+  const [view, setView] = useState<'studio' | 'table' | 'forecast'>('studio');
   const [studioError, setStudioError] = useState<string | null>(null);
   const rows = ledger.data ?? [];
 
@@ -74,6 +79,8 @@ export default function LedgerPage() {
             title="No charges yet"
             body="Charges appear here once an agreement is approved by every party and goes live on PayPal."
           />
+        ) : view === 'forecast' ? (
+          <CashForecast rows={rows} today={meta?.today ?? browserToday()} />
         ) : view === 'studio' && !studioError ? (
           <div className="sheet h-[calc(100vh-14rem)] min-h-[640px] overflow-hidden">
             <StudioBoundary

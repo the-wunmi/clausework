@@ -297,6 +297,36 @@ export interface DecisionView {
   createdAt: string;
 }
 
+/**
+ * Everything behind one charge: the clauses it comes from as the contract words them, the tests
+ * that prove its amount, what the agent decided about it, and the money that moved for it.
+ */
+export interface ChargeTraceView {
+  chargeId: string;
+  /** The plan version that laid the charge out, whose clauses and tests are shown. */
+  version: number;
+  obligation: {
+    key: string;
+    title: string;
+    kind: ObligationKind;
+    explanation: string;
+  } | null;
+  /** `found` is false when the quote could not be located in the source, so a person checks it. */
+  clauses: { id: string; ref: string; quote: string; found: boolean }[];
+  tests: TestView[];
+  decisions: DecisionView[];
+  /** Oldest first: the charge's story as it happened. */
+  events: EventView[];
+  movements: {
+    kind: string;
+    amount: Minor;
+    currency: string;
+    occurredOn: string;
+    paypalRef: string | null;
+    memo: string;
+  }[];
+}
+
 export interface AgreementDetail {
   agreement: AgreementSummary & {
     sourceText: string;

@@ -301,6 +301,9 @@ export function createApp(e: Engine) {
   app.get('/api/agreements/:id/events', async (c) =>
     json(await engine.eventViews(e, (await agreementOf(c)).id)),
   );
+  app.get('/api/agreements/:id/charges/:chargeId/trace', async (c) =>
+    json(await engine.chargeTrace(e, await agreementOf(c), c.req.param('chargeId'))),
+  );
   app.get('/api/agreements/:id/decisions', async (c) =>
     json(await engine.decisionViews(e, (await agreementOf(c)).id)),
   );

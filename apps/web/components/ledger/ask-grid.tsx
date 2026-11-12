@@ -50,7 +50,7 @@ export function AskGrid({ rows }: { rows: LedgerRow[] }) {
     setBusy(true);
     setError(null);
     try {
-      const a = await api.askLedger(q);
+      const a = await api.askLedger({ question: q });
       applyAnswer(grid, a);
       setAnswer(a.answer);
     } catch (err) {

@@ -65,6 +65,14 @@ describe('the API', () => {
     expect(((await res.json()) as { error: string }).error).toBe('invalid');
   });
 
+  it('reads a ledger question from the body the web app sends', async () => {
+    const tooShort = await post('/api/ledger/ask', { question: ' a ' });
+    expect(tooShort.status).toBe(422);
+    // A well-formed question gets as far as the model, which these tests run without.
+    const ok = await post('/api/ledger/ask', { question: 'What is at risk this month?' });
+    expect(((await ok.json()) as { error: string }).error).toBe('unavailable');
+  });
+
   it('stores an upload and queues the compiler without waiting for it', async () => {
     const text =
       'This agreement is between Acme and Beta. Acme pays Beta $1,000 per month from 1 January 2027.';

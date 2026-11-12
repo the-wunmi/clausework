@@ -7,6 +7,7 @@ import type {
   DecisionView,
   EventView,
   LedgerAnswer,
+  LedgerQuestion,
   LedgerRow,
   MetaView,
   NewAgreement,
@@ -148,8 +149,8 @@ export const api = {
     request<PortalView>(`/api/portal/${enc(token)}/approvals`, { method: 'POST', body }),
 
   ledger: () => request<LedgerRow[]>('/api/ledger'),
-  askLedger: (question: string) =>
-    request<LedgerAnswer>('/api/ledger/ask', { method: 'POST', body: { question } }),
+  askLedger: (input: LedgerQuestion) =>
+    request<LedgerAnswer>('/api/ledger/ask', { method: 'POST', body: input }),
 
   audits: () => request<AuditView[]>('/api/audits'),
   audit: (id: string) => request<AuditView>(`/api/audits/${enc(id)}`),

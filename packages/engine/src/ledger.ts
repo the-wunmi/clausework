@@ -1,6 +1,6 @@
 import { formatMoney } from '@clausework/billing';
 import type { LedgerAnswer, LedgerRow } from '@clausework/core';
-import { DomainError, fromMajor } from '@clausework/core';
+import { DomainError, fromMajor, LedgerQuestion, parseInput } from '@clausework/core';
 import { type Engine, today } from './context.ts';
 import { ledgerRows } from './views.ts';
 
@@ -8,11 +8,9 @@ import { ledgerRows } from './views.ts';
  * "What's at risk this month?" The analyst turns a question into grid state; the grid applies it.
  * The answer's figures are totalled here from the rows the filters keep, never by the model.
  */
-export async function askLedger(engine: Engine, question: string): Promise<LedgerAnswer> {
+export async function askLedger(engine: Engine, input: LedgerQuestion): Promise<LedgerAnswer> {
+  const { question: q } = parseInput(LedgerQuestion, input);
   if (!engine.agents) throw new DomainError('unavailable', 'No model is configured');
-  const q = question.trim();
-  if (q.length < 3 || q.length > 500)
-    throw new DomainError('invalid', 'Ask a question of 3 to 500 characters');
   const on = await today(engine.db);
   const query = await engine.agents.analyst.ask(q, on);
   const rows = (await ledgerRows(engine)).filter((r) => query.filters.every((f) => keeps(r, f)));

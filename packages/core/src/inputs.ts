@@ -83,3 +83,8 @@ export const AuditInput = z.object({
   ]),
 });
 export type AuditInput = z.input<typeof AuditInput>;
+
+export const LedgerQuestion = z.object({
+  question: z.string().trim().min(3, 'Ask a question of 3 to 500 characters').max(500),
+});
+export type LedgerQuestion = z.input<typeof LedgerQuestion>;

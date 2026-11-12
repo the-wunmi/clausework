@@ -25,7 +25,6 @@ import {
   STAGE_LABEL,
   stamp,
   tidyLabel,
-  todayIso,
   uniqueRefs,
 } from '@/lib/format';
 import { hasApproved } from '@/lib/plan';
@@ -241,7 +240,7 @@ const AHEAD_DAYS = 92;
  */
 function Charges({ portal: p }: { portal: PortalView }) {
   const [all, setAll] = useState(false);
-  const today = todayIso();
+  const today = p.today;
   const horizon = addDays(today, AHEAD_DAYS);
   const titles = new Map(p.version?.plan.obligations.map((o) => [o.key, o.title]));
   const open = (c: ChargeView) =>

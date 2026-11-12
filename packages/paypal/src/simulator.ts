@@ -1474,15 +1474,18 @@ export class PayPalSimulator implements PayPalGateway {
 
   // ── Reporting ──────────────────────────────────────────────────────────────
 
-  async searchTransactions(from: string, to: string): Promise<ReportedTransaction[]> {
-    const inRange = (time: string) => time.slice(0, 10) >= from && time.slice(0, 10) <= to;
+  async searchTransactions(from: Date, until: Date): Promise<ReportedTransaction[]> {
+    const inRange = (time: string) => {
+      const at = new Date(time).getTime();
+      return at >= from.getTime() && at < until.getTime();
+    };
     const out: ReportedTransaction[] = [];
     for (const { data } of await this.#store.list('capture')) {
       const c = data as SimCapture;
       if (!inRange(c.createTime)) continue;
       out.push({
         id: c.id,
-        date: c.createTime.slice(0, 10),
+        at: new Date(c.createTime).toISOString(),
         amount: load(c.amount),
         counterpartyEmail: c.payer?.email ?? null,
         counterpartyName: c.payer?.name ?? null,
@@ -1497,7 +1500,7 @@ export class PayPalSimulator implements PayPalGateway {
       if (!inRange(r.createTime)) continue;
       out.push({
         id: r.id,
-        date: r.createTime.slice(0, 10),
+        at: new Date(r.createTime).toISOString(),
         amount: { amount: -minorOf(r.amount), currency: r.amount.currency },
         counterpartyEmail: r.payer?.email ?? null,
         counterpartyName: r.payer?.name ?? null,
@@ -1512,7 +1515,7 @@ export class PayPalSimulator implements PayPalGateway {
       if (!inRange(s.createTime)) continue;
       out.push({
         id: s.id,
-        date: s.createTime.slice(0, 10),
+        at: new Date(s.createTime).toISOString(),
         amount: load(s.amount),
         counterpartyEmail: s.payer?.email ?? null,
         counterpartyName: s.payer?.name ?? null,
@@ -1527,7 +1530,7 @@ export class PayPalSimulator implements PayPalGateway {
       if (!inv.paid || !inv.paidTime || !inRange(inv.paidTime)) continue;
       out.push({
         id: inv.id.replaceAll('-', '').slice(4, 21),
-        date: inv.paidTime.slice(0, 10),
+        at: new Date(inv.paidTime).toISOString(),
         amount: load(inv.paid),
         counterpartyEmail: inv.payer?.email ?? inv.recipient.email,
         counterpartyName: inv.payer?.name ?? inv.recipient.name,
@@ -1543,7 +1546,7 @@ export class PayPalSimulator implements PayPalGateway {
         if (i.status !== 'SUCCESS' || !inRange(i.time)) continue;
         out.push({
           id: i.itemId,
-          date: i.time.slice(0, 10),
+          at: new Date(i.time).toISOString(),
           amount: { amount: -minorOf(i.amount), currency: i.amount.currency },
           counterpartyEmail: i.receiver.email,
           counterpartyName: i.receiver.name,
@@ -1554,6 +1557,6 @@ export class PayPalSimulator implements PayPalGateway {
         });
       }
     }
-    return out.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+    return out.sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
   }
 }

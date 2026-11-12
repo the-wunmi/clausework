@@ -444,6 +444,7 @@ export async function portalView(
     owner: plan?.parties.find((p) => p.key === agreement.ownerParty) ?? null,
     stage: detail.agreement.stage,
     live: detail.liveVersionId !== null,
+    today: await today(engine.db),
     version: detail.version,
     obligationKeys: keys,
     charges: mine,

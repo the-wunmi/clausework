@@ -6,11 +6,25 @@ import {
   projectCharges,
   resolveAmount,
 } from '@clausework/billing';
-import { applyBps, CONFIDENT, DomainError, type Obligation, productFor } from '@clausework/core';
+import {
+  applyBps,
+  CONFIDENT,
+  DomainError,
+  type Obligation,
+  productFor,
+  startOfDay,
+} from '@clausework/core';
 import { agreements, bindings, charges, type Tx } from '@clausework/db';
 import type { Capabilities } from '@clausework/paypal';
 import { and, eq, gte, sql } from 'drizzle-orm';
-import { type Engine, runDirectly, type Step, serially, today } from './context.ts';
+import {
+  type Engine,
+  runDirectly,
+  type Step,
+  serially,
+  today,
+  workspaceTimeZone,
+} from './context.ts';
 import {
   clauseRefs,
   flowOf,
@@ -348,7 +362,7 @@ async function setUpSubscription(
     requestId: requestKey('subscription', live.agreement.id, o.key),
     planId: plan.planId,
     subscriber: partyRef(payer),
-    startTime: `${startDay}T00:00:00Z`,
+    startTime: startOfDay(startDay, await workspaceTimeZone(engine.db)).toISOString(),
     customId: `${live.agreement.id}:${o.key}`,
     returnUrl: `${engine.publicUrl}/p/return?agreement=${live.agreement.id}`,
     cancelUrl: `${engine.publicUrl}/p/return?agreement=${live.agreement.id}&cancelled=1`,

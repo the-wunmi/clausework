@@ -9,7 +9,7 @@ import {
 import { createDb, createPool, type Db } from '@clausework/db';
 import { createGateway, type PayPalGateway } from '@clausework/paypal';
 import pg from 'pg';
-import { type Agents, type Engine, Lanes, loadSecret } from './context.ts';
+import { type Agents, type Engine, Lanes, loadSecret, setWorkspaceTimeZone } from './context.ts';
 
 export * from './access.ts';
 export * from './activate.ts';
@@ -43,6 +43,7 @@ export async function createEngine(options: EngineOptions = {}): Promise<Engine>
   const env = options.env ?? process.env;
   const db = options.db ?? createDb(createPool(env.DATABASE_URL));
   const publicUrl = (env.CLAUSEWORK_PUBLIC_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+  if (env.CLAUSEWORK_TIMEZONE) await setWorkspaceTimeZone(db, env.CLAUSEWORK_TIMEZONE);
   const agents =
     options.agents !== undefined
       ? options.agents

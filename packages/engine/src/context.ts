@@ -7,10 +7,12 @@ import type {
   ScheduleAgent,
   TransactionMatcher,
 } from '@clausework/agents';
+import { addDays } from '@clausework/billing';
+import { DomainError, dayIn, isTimeZone } from '@clausework/core';
 import type { Db, Tx } from '@clausework/db';
 import { settings } from '@clausework/db';
 import type { PayPalGateway } from '@clausework/paypal';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type pg from 'pg';
 
 export interface Agents {
@@ -84,13 +86,37 @@ export async function setClockOffset(db: Db | Tx, offsetDays: number): Promise<v
     .onConflictDoUpdate({ target: settings.key, set: { value: { offsetDays } } });
 }
 
-export const realToday = (): string => new Date().toISOString().slice(0, 10);
+const TIME_ZONE = 'time_zone';
 
+/**
+ * The workspace's IANA time zone. It decides which calendar day it is for every agreement, so a
+ * charge due on 1 December falls due at midnight there, not at midnight UTC.
+ */
+export async function workspaceTimeZone(db: Db | Tx): Promise<string> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, TIME_ZONE));
+  return (row?.value as { zone?: string } | undefined)?.zone ?? 'UTC';
+}
+
+export async function setWorkspaceTimeZone(db: Db | Tx, zone: string): Promise<void> {
+  if (!isTimeZone(zone)) throw new DomainError('invalid', `Unknown time zone "${zone}"`);
+  await db
+    .insert(settings)
+    .values({ key: TIME_ZONE, value: { zone } })
+    .onConflictDoUpdate({ target: settings.key, set: { value: { zone } } });
+}
+
+export const realToday = (zone = 'UTC'): string => dayIn(new Date(), zone);
+
+/** Today's calendar day in the workspace's time zone, moved by the test clock. */
 export async function today(db: Db | Tx): Promise<string> {
-  const offset = await clockOffset(db);
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + offset);
-  return d.toISOString().slice(0, 10);
+  const rows = await db
+    .select()
+    .from(settings)
+    .where(inArray(settings.key, [CLOCK, TIME_ZONE]));
+  const value = (key: string) => rows.find((r) => r.key === key)?.value as Record<string, unknown>;
+  const offset = (value(CLOCK)?.offsetDays as number | undefined) ?? 0;
+  const zone = (value(TIME_ZONE)?.zone as string | undefined) ?? 'UTC';
+  return addDays(realToday(zone), offset);
 }
 
 // ── One lane per agreement ───────────────────────────────────────────────────

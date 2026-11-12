@@ -48,6 +48,8 @@ export interface MetaView {
   paypal: PayPalInfo;
   /** The workspace's today, which the rules schedule against. */
   today: string;
+  /** The workspace's IANA time zone, which decides when each day starts. */
+  timeZone: string;
   model: string | null;
   samples: SampleView[];
 }
@@ -327,6 +329,8 @@ export interface PortalView {
   stage: Stage;
   /** True when a plan is running on PayPal, even while an amendment awaits approval. */
   live: boolean;
+  /** The workspace's today, which this party's charges are due against. */
+  today: string;
   version: VersionView | null;
   /** Obligations this party pays or is paid under. */
   obligationKeys: string[];

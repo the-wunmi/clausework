@@ -5,4 +5,5 @@ export * from './inputs.ts';
 export * from './money.ts';
 export * from './plan.ts';
 export * from './quote.ts';
+export * from './time.ts';
 export * from './views.ts';

@@ -322,7 +322,10 @@ describe('payouts', () => {
       payout_item: { sender_item_id: 'kinetic' },
     });
 
-    const txns = await sim.searchTransactions('2027-01-01', '2027-01-31');
+    const txns = await sim.searchTransactions(
+      new Date('2027-01-01T00:00:00Z'),
+      new Date('2027-02-01T00:00:00Z'),
+    );
     expect(txns).toHaveLength(1);
     expect(txns[0]!.amount).toEqual(USD(-384_000n));
   });

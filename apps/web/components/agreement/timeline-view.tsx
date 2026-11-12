@@ -214,7 +214,7 @@ function build(detail: AgreementDetail) {
     return [
       {
         id: `phase:${p.key}`,
-        name: p.blockedBy ? `${p.name}: waiting on PayPal payment` : p.name,
+        name: p.name,
         startDate: toDate(start),
         // Bryntum ends a bar at the start of its end date; the API's end day is inclusive.
         endDate: toDate(addDays(end, 1)),

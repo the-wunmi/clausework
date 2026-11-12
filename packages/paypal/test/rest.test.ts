@@ -253,6 +253,7 @@ describe('PayPalRest', () => {
       (c) => c.url.endsWith('/v2/invoicing/invoices') && c.method === 'POST',
     )!;
     expect(create.headers['paypal-request-id']).toBeUndefined();
+    expect((create.body as { detail: object }).detail).not.toHaveProperty('invoice_date');
     expect(create.body).toMatchObject({
       detail: {
         invoice_number: 'CW-1-phase_2',

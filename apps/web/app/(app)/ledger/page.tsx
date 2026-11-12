@@ -6,7 +6,7 @@ import { useApp } from '@/components/app-context';
 import { TabPanel, Tabs } from '@/components/tabs';
 import { EmptyState, ErrorNote, PageHeader, Skeleton } from '@/components/ui';
 import { api } from '@/lib/api';
-import { todayIso } from '@/lib/format';
+import { browserToday } from '@/lib/format';
 import { useResource } from '@/lib/use-resource';
 
 const StudioDashboard = dynamic(() => import('@/components/ledger/studio-dashboard'), {
@@ -82,7 +82,7 @@ export default function LedgerPage() {
                 setView('table');
               }}
             >
-              <StudioDashboard rows={rows} today={meta?.today ?? todayIso()} />
+              <StudioDashboard rows={rows} today={meta?.today ?? browserToday()} />
             </StudioBoundary>
           </div>
         ) : (

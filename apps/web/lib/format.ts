@@ -64,6 +64,13 @@ const DAY_SHORT = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
   timeZone: 'UTC',
 });
+/** An instant's date in the viewer's own zone. */
+const INSTANT_DAY = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
+const INSTANT_DAY_SHORT = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
 const STAMP = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
@@ -71,11 +78,17 @@ const STAMP = new Intl.DateTimeFormat('en-US', {
   minute: '2-digit',
 });
 
+/**
+ * A calendar day (YYYY-MM-DD) is shown as written, whatever the viewer's zone. An instant is shown
+ * on the day it falls in the viewer's zone.
+ */
 export function day(iso: string | null | undefined, short = false): string {
   if (!iso) return '—';
-  const d = new Date(iso.length === 10 ? `${iso}T00:00:00Z` : iso);
+  const calendarDay = iso.length === 10;
+  const d = new Date(calendarDay ? `${iso}T00:00:00Z` : iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return (short ? DAY_SHORT : DAY).format(d);
+  if (calendarDay) return (short ? DAY_SHORT : DAY).format(d);
+  return (short ? INSTANT_DAY_SHORT : INSTANT_DAY).format(d);
 }
 
 export function stamp(iso: string | null | undefined): string {
@@ -84,8 +97,8 @@ export function stamp(iso: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? iso : STAMP.format(d);
 }
 
-/** Today's date in UTC, for pages that have no server clock to ask. */
-export const todayIso = (): string => new Date().toISOString().slice(0, 10);
+/** The viewer's own today, shown only until the server's today has loaded. */
+export const browserToday = (): string => new Intl.DateTimeFormat('en-CA').format(new Date());
 
 export function daysBetween(a: string, b: string): number {
   return Math.round(

@@ -236,6 +236,7 @@ export function createApp(e: Engine) {
         transactionSearch: caps.transactionSearch,
       },
       today: await engine.today(e.db),
+      timeZone: await engine.workspaceTimeZone(e.db),
       model: e.agents?.model ?? null,
       samples: engine.sampleViews(),
     };

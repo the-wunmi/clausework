@@ -136,7 +136,7 @@ export interface CreateInvoiceInput {
   invoicer: PartyRef;
   recipient: PartyRef;
   lines: InvoiceLine[];
-  /** YYYY-MM-DD. */
+  /** YYYY-MM-DD, for Clausework's records. PayPal dates the invoice itself. */
   invoiceDate: string;
   dueDate: string;
   note: string;
@@ -240,7 +240,8 @@ export interface UsageEventInput {
 
 export interface ReportedTransaction {
   id: string;
-  date: string;
+  /** When it happened, as an ISO instant in UTC. */
+  at: string;
   /** Positive for money in, negative for money out. */
   amount: Money;
   counterpartyEmail: string | null;
@@ -314,8 +315,8 @@ export interface PayPalGateway {
   createMeter(input: MeterInput): Promise<MeterResult>;
   recordUsage(event: UsageEventInput): Promise<void>;
 
-  /** Only when `capabilities().transactionSearch`. Dates are YYYY-MM-DD, at most 31 days apart. */
-  searchTransactions(from: string, to: string): Promise<ReportedTransaction[]>;
+  /** Only when `capabilities().transactionSearch`. From `from` up to `until`, at most 31 days. */
+  searchTransactions(from: Date, until: Date): Promise<ReportedTransaction[]>;
 
   /** Checks a delivery really came from PayPal. */
   verifyWebhook(request: WebhookRequest): Promise<boolean>;

@@ -47,6 +47,22 @@ language and can map it to payment building blocks, and code that can prove the 
 | Retainage                 | "withhold 10% … released 30 days after acceptance"          | Invoicing                                                    | Deducted from milestone invoices, released on the date                                                                                     |
 | Service credit            | "credit 10% of that month's fee"                            | Payments refund                                              |                                                                                                                                            |
 
+## How it uses AI
+
+Claude (`claude-opus-5-5` through the Anthropic API, with structured outputs) reads and judges.
+Deterministic code handles every amount and every PayPal call. All prompts are built on the server.
+
+| Agent | What the model does | What code enforces |
+| --- | --- | --- |
+| Contract compiler | Quotes every clause that involves money, then compiles the clauses into typed obligations, each with a confidence and the ambiguities it noticed. Writes tests for each obligation from the clause wording, with the amount it expects. | Each quote must appear verbatim in the source, or its clause is marked unverified and needs a person. A deterministic evaluator runs every test; a failure gets one repair, then goes to a person. |
+| Schedule agent | When something changes (a phase moves, a payment fails, a payout is unclaimed), picks actions from a fixed, typed list and cites the clause for each. | Every action is checked against the approved plan. Code computes the amounts. A phase can be delayed but never brought forward, and every capture or raise passes the same due test the rules use. |
+| Transaction matcher | Matches a messy PayPal activity export to the charges the contract expected (audit mode). | The owed and overpaid totals are computed by code from the matches. |
+| Amendment drafter | Turns an email thread agreeing a change into a new plan version with an effective date. | Shown as a diff; only the parties whose money changes approve again. |
+| Ledger analyst (AG Studio) | Answers questions about the ledger, with tools to explain a charge from its clause, remind a payer and find what is at risk. | Calls are rate-limited per hour; reminders go through the same PayPal adapter as everything else. |
+
+`pnpm eval` runs the agents against the real model, including instructions planted in contract
+clauses, email threads and ledger questions.
+
 ## Architecture
 
 ```mermaid
@@ -178,6 +194,8 @@ Docker with the Compose and Buildx plugins, about 3 GB of memory for the web bui
      PayPal return links are built from it
    - recommended: `CLAUSEWORK_OWNER_KEY=cw_<random>` (e.g. from `openssl rand -hex 24`), so no key
      is printed to the logs
+   - recommended: `CLAUSEWORK_TIMEZONE`, your business's IANA time zone (e.g. `America/New_York`).
+     Contract dates are calendar days; this decides when each one starts. Defaults to UTC.
    - optional: `CLAUSEWORK_ALERT_WEBHOOK_URL`, and the `NEXT_PUBLIC_*` licence keys, which are built
      into the web image
 2. Start everything; the API runs its migrations and resumes any interrupted workflow:
@@ -245,3 +263,21 @@ build, and builds both Docker images.
   from your PayPal account; what two other parties owe each other is tracked, not moved.
 - Usage-Based Billing request shapes for charges follow the published spec but have not been run
   against an enabled account.
+
+## Built with
+
+- **PayPal:** Orders v2 (authorize and capture), Catalog Products, Billing Plans and Subscriptions,
+  Invoicing v2, Payouts, Transaction Search and Webhooks, all run against the sandbox. Usage-Based
+  Billing is wired in for accounts with the limited release.
+- **AI:** Claude Opus 5.5 through the Anthropic API.
+- **Sponsor tools:** [AG Grid](https://www.ag-grid.com) and AG Studio (the ledger and its
+  assistant, on the Agent Framework) and the [Bryntum Gantt](https://bryntum.com/products/gantt/)
+  (delivery phases with payments as dependencies).
+- **App:** TypeScript on Node 24, pnpm and Turborepo, Hono, Next.js 16, PostgreSQL 17, Drizzle,
+  [DBOS](https://dbos.dev) durable workflows, Zod, Vitest and Biome.
+- **Hosting:** Docker Compose behind Caddy on AWS EC2, with Cloudflare in front and GitHub Actions
+  for CI.
+
+## License
+
+[MIT](LICENSE)

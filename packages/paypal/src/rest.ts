@@ -1,3 +1,4 @@
+import { parseInstant } from '@clausework/core';
 import type {
   AuthorizationResult,
   Capabilities,
@@ -470,7 +471,8 @@ export class PayPalRest implements PayPalGateway {
             currency_code: input.lines[0]?.unitAmount.currency ?? 'USD',
             invoice_number: input.invoiceNumber,
             reference: input.reference.slice(0, 120),
-            invoice_date: input.invoiceDate,
+            // No invoice_date: PayPal reads it in the merchant's timezone, and holds a date that is
+            // still tomorrow there as SCHEDULED.
             note: input.note.slice(0, 4000),
             payment_term: { term_type: 'DUE_ON_DATE_SPECIFIED', due_date: input.dueDate },
           },
@@ -698,13 +700,13 @@ export class PayPalRest implements PayPalGateway {
 
   // ── Reporting ──────────────────────────────────────────────────────────────
 
-  async searchTransactions(from: string, to: string): Promise<ReportedTransaction[]> {
+  async searchTransactions(from: Date, until: Date): Promise<ReportedTransaction[]> {
     const out: ReportedTransaction[] = [];
     for (let page = 1; page <= 50; page++) {
       const { body } = await this.#request('GET', '/v1/reporting/transactions', {
         query: {
-          start_date: `${from}T00:00:00Z`,
-          end_date: `${to}T23:59:59Z`,
+          start_date: rfc3339(from),
+          end_date: rfc3339(new Date(until.getTime() - 1000)),
           fields: 'transaction_info,payer_info',
           page_size: '500',
           page: String(page),
@@ -717,7 +719,7 @@ export class PayPalRest implements PayPalGateway {
         if (!str(amount.value)) continue;
         out.push({
           id: String(info.transaction_id),
-          date: String(info.transaction_initiation_date ?? '').slice(0, 10),
+          at: parseInstant(String(info.transaction_initiation_date)).toISOString(),
           amount: fromPayPal(amount as unknown as PayPalAmount),
           counterpartyEmail: str(payer.email_address),
           counterpartyName:

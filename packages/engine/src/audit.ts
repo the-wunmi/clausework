@@ -9,15 +9,17 @@ import {
 import {
   AuditInput,
   DomainError,
+  dayIn,
   fromMajor,
   type Plan,
   parseInput,
+  startOfDay,
   toMajor,
 } from '@clausework/core';
 import { audits } from '@clausework/db';
 import { desc, eq } from 'drizzle-orm';
 import type { z } from 'zod';
-import { type Engine, runDirectly, type Step, today } from './context.ts';
+import { type Engine, runDirectly, type Step, today, workspaceTimeZone } from './context.ts';
 import { termsOf } from './operations.ts';
 import { activeVersion, currentPhaseDates, isUuid, loadAgreement } from './repo.ts';
 import { findSample, sampleFile } from './samples.ts';
@@ -73,12 +75,18 @@ async function paypalHistory(
   const caps = await engine.gateway.capabilities();
   if (!caps.transactionSearch)
     throw new DomainError('unavailable', 'Transaction Search is not enabled for this PayPal app');
+  const zone = await workspaceTimeZone(engine.db);
   const found = [];
   for (let from = range.from; from <= range.to; from = addDays(from, SEARCH_WINDOW_DAYS)) {
     const windowEnd = addDays(from, SEARCH_WINDOW_DAYS - 1);
     // ISO dates order as text, so the earlier of the two is the first when sorted.
     const to = [windowEnd, range.to].sort()[0] as string;
-    found.push(...(await engine.gateway.searchTransactions(from, to)));
+    found.push(
+      ...(await engine.gateway.searchTransactions(
+        startOfDay(from, zone),
+        startOfDay(addDays(to, 1), zone),
+      )),
+    );
   }
   const transactions = found
     .filter((t) => t.amount.currency === plan.currency)
@@ -87,7 +95,7 @@ async function paypalHistory(
       const other = partyFor(plan, t.counterpartyEmail, t.counterpartyName);
       return {
         id: t.id,
-        date: t.date.slice(0, 10),
+        date: dayIn(new Date(t.at), zone),
         amount: incoming ? t.amount.amount : -t.amount.amount,
         payer: incoming ? other : perspective,
         payee: incoming ? perspective : other,

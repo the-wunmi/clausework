@@ -14,7 +14,7 @@ import { useApp } from '@/components/app-context';
 import { TabPanel, Tabs } from '@/components/tabs';
 import { ErrorNote, Money, Pill, Skeleton, Spinner } from '@/components/ui';
 import { api } from '@/lib/api';
-import { atRisk, day, stageOf, todayIso } from '@/lib/format';
+import { atRisk, browserToday, day, stageOf } from '@/lib/format';
 import { hasApproved } from '@/lib/plan';
 import { useResource } from '@/lib/use-resource';
 import { markSeen } from '@/lib/use-seen-version';
@@ -183,7 +183,7 @@ export default function AgreementPage() {
           <PlanView detail={detail} onChange={onChange} onStale={() => void res.reload()} />
         )}
         {tab === 'timeline' && (
-          <TimelineView detail={detail} today={meta?.today ?? todayIso()} onChange={onChange} />
+          <TimelineView detail={detail} today={meta?.today ?? browserToday()} onChange={onChange} />
         )}
         {tab === 'ledger' && <LedgerView detail={detail} onChange={onChange} />}
         {tab === 'activity' && <ActivityView detail={detail} />}

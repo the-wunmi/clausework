@@ -16,7 +16,7 @@
     "@clausework/core": "workspace:*",
     "@clausework/db": "workspace:*",
     "@clausework/paypal": "workspace:*",
-    "@dbos-inc/dbos-sdk": "^5.5.0",
+    "@dbos-inc/dbos-sdk": "^5.6.0",
     "drizzle-orm": "^0.45.4",
     "pdfjs-dist": "^6.5.438",
     "pg": "^8.23.1",

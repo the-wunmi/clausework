@@ -27,12 +27,12 @@
     "test:live": "CLAUSEWORK_LIVE=1 pnpm --filter @clausework/paypal exec vitest run test/sandbox.live.test.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.6.3",
+    "@biomejs/biome": "^2.6.8",
     "@types/node": "^24",
     "pdf-lib": "^1.17.1",
     "tsx": "^4.23.15",
-    "turbo": "^2.11.10",
+    "turbo": "^2.11.13",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.1"
   }
 }
